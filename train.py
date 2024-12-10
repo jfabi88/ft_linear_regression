@@ -29,10 +29,11 @@ def read_file(filename = "./data.csv"):
 
 
 def parse(args):
-    learning_rate = 0.1
+    learning_rate = 0.9
+    epochs = 100
 
     if len(args) < 2:
-        print("Default learning rate(pass an argument to set): 0.1")
+        print("Default learning rate(pass an argument to set): 0.9")
     else:
         try:
             learning_rate = float(args[1])
@@ -41,8 +42,34 @@ def parse(args):
             print("Error: Wrong learning rate")
             input("\nPremi Invio per chiudere...")
             exit(-1)
+    
+    if len(args) < 3:
+         print("Default epochs(pass an argument to set): 100")
+    else:
+        try:
+            epochs = int(args[2])
+            print(f"Epochs: {epochs}")
+        except ValueError:
+            print("Error: Wrong learning rate")
+            input("\nPremi Invio per chiudere...")
+            exit(-1)
 
-    return learning_rate
+    return learning_rate, epochs
+
+
+def normalize_data(data):
+    max_x = 0
+    max_y = 0
+
+    for x, y in data:
+        if x > max_x:
+            max_x = x
+        if y > max_y:
+            max_y = y
+    
+    data = [(x / max_x, y / max_y) for x, y in data]
+
+    return data, max_x, max_y
 
 
 def plot(data, model):
@@ -66,19 +93,19 @@ def plot(data, model):
 
 def main(args):
     data = []
-    epochs = int(args[2])
-    learning_rate = parse(args)
+    learning_rate, epochs = parse(args)
 
     data = read_file("./data.csv")
-    max_km = 240000
-    max_price = 8290
-    data = [(km / max_km, price / max_price) for km, price in data]
-    train = Trainer()
-    model = Model()
+
+    data, max_km, max_price = normalize_data(data)
+
+    trainer = Trainer()
+    model = Model(1.0 / max_km, 1.0 / max_price)
     dataset = Dataset(data)
-    for _ in range(epochs):
-        loss = train.train(learning_rate, model, dataset)
-        print(f"Loss: {loss}")
+
+    trainer.train(learning_rate, epochs, model, dataset)
+    model.save("parameters.txt", 1.0 / max_km, 1.0 / max_price)
+
     plot(dataset, model)
 
 
